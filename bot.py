@@ -1,17 +1,30 @@
 import random
+import os, dotenv
+import json
+import sqlite3
 
 import requests
 from aiogram import Bot, Dispatcher, types
 from aiogram.utils import executor, exceptions
+import aiogram
 from bs4 import BeautifulSoup
 
-# Импорт токена из файла с токеном
-with open('token.txt') as token_file:
-    token = token_file.read()
+# import emoji
 
-# Создание бота и диспетчера
+# Read the token from .env file 
+# IMPORTANT: never share the token, otherwise the bot can be stollen. 
+dotenv.load_dotenv()
+token = os.getenv('DEMO_TOKEN')
+
+# Create bot and dispatcher 
 bot = Bot(token)
 dp = Dispatcher(bot=bot)
+
+# Load message templates from json file
+with open('message_templates.json') as templates_file:
+    message_templates = json.load(templates_file)
+# Set default user locale 
+user_locale = 'en'
 
 # Обозначение словаря со стикерами
 # Словарь в формате {emoji: [sticker_id, sticker_id]}
@@ -115,11 +128,28 @@ async def startup(_):
 async def get_sticker_set(message: types.Message):
     # Глобальный словарь со стикерами по эмоджи
     global stickers
+    
+    print(message.from_user.language_code)
 
     # Определение пользовательского стикера
     user_sticker = message.sticker
+    # print(user_sticker)
     # Определение стикерпака, в котором пользовательский стикер
     set_name = user_sticker.set_name
+    set_data = await bot.get_sticker_set(name=user_sticker.set_name)
+    # print(set_data)
+    
+    if set_name != 'None' and set_data['sticker_type'] == 'regular':
+        this_name = set_data['name']
+        this_is_animated = set_data['is_animated']
+        if this_is_animated:
+            this_animated_status = 1
+        else: 
+            this_animated_status = 0
+        this_stick_count = len(set_data['stickers'])
+        print(f'Received stickerpack data: {this_name}, {this_animated_status}, {this_stick_count}')
+    else:
+        print('Set is not aropriate')
 
     # Если этот стикерпак возможно сохранить в программу
     if set_name != 'None':
@@ -129,8 +159,7 @@ async def get_sticker_set(message: types.Message):
         if set_name not in sets:
             # Уведомление пользователя
             await bot.send_message(chat_id=message.chat.id,
-                                   text='Минуту, я сохраню этот пак себе...\n'
-                                        'Пришлю стикер в ответ, когда закончу')
+                                   text=message_templates[user_locale]['save sticker'])
             # Запись стикерпака в список для программы
             write_new_set(set_name)
             # Перезагрузка словаря со стикерами, чтобы включить туда новый пак
@@ -138,6 +167,9 @@ async def get_sticker_set(message: types.Message):
 
     # Определение эмоджи, соответствующего пользовательскому стикеру
     user_emoji = user_sticker.emoji
+    # print(user_emoji)
+    # print(emoji.demojize(user_emoji))
+    # print(emoji.emojize(emoji.demojize(user_emoji)))
 
     # Если возможно дать ответ на этот стикер
     if user_emoji in stickers.keys():
@@ -150,7 +182,7 @@ async def get_sticker_set(message: types.Message):
     else:
         # уведомление пользователя о том, что ответа нет
         await bot.send_message(chat_id=message.chat.id,
-                               text='Тут и сказать нечего')
+                               text=message_templates[user_locale]['no answer'])
 
 
 # Получение списка всех возможных типов входящих событий
@@ -163,7 +195,7 @@ all_types.remove('sticker')
 # Обрабатывает текстовые сообщения с командами start и help
 async def start(message: types.Message):
     # Текст для сообщения
-    start_text = '18+\nОтправь стикер – пришлю такой же по эмоджи'
+    start_text = message_templates[user_locale]['start']
     # Отправка сообщения
     await bot.send_message(chat_id=message.chat.id, text=start_text)
 
@@ -172,7 +204,7 @@ async def start(message: types.Message):
 # Обрабатывает все входящие события, кроме стикеров и команд start и help
 async def answer_to_text(message: types.Message):
     # Уведомление пользователя
-    await message.reply(text='Я не умею общаться не стикерами, сорри')
+    await message.reply(text=message_templates[user_locale]['message is not sticker'])
     # Получение рандомного стикера peace
     peace_stick = random.choice(stickers['✌️'])
     # Отправка стикера
@@ -182,3 +214,7 @@ async def answer_to_text(message: types.Message):
 
 # Запуск бота
 executor.start_polling(dispatcher=dp, skip_updates=True, on_startup=startup)
+
+
+# TODO: add language change on user locale definition 
+# TODO: or add language manual change 
