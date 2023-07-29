@@ -30,5 +30,20 @@ def load_extisting_sets(path_to_file: str = os.path.relpath('data/sets.json')) -
         error_logger.error(f'{path_to_file} is not found')
         return None
     
-
-print(load_extisting_sets())
+def update_set(set_name: str, new_value: int, sets_dict: dict):
+    if type(new_value) == int and type(set_name) == str and type(sets_dict) == dict:
+        sets_dict[set_name] = new_value
+    else:
+        if type(new_value) != int:
+            error_logger.log(f'Inappropriate type provided to update set ({new_value} is not integer)')
+            raise TypeError(f"New value is expected to be int, not {type(new_value)}")
+        if type(set_name) != str:
+            error_logger.log(f'Inappropriate type provided to update set ({set_name} is not string)')
+            raise TypeError(f"Set name is expected to be str, not {type(set_name)}")
+        if type(sets_dict) != dict:
+            error_logger.log(f'Inappropriate type provided to update set ({sets_dict} is not dict)')
+            raise TypeError(f"Sets dict is expected to be str, not {type(sets_dict)}")
+    
+    
+sets = load_extisting_sets()
+update_set('someset', new_value='0', sets_dict=sets)
