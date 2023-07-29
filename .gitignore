@@ -1,5 +1,6 @@
 # Virtual environment
 venv/
+env/
 .env
 
 # Database in SQLite3
@@ -13,3 +14,4 @@ __pycache__/
 
 sets.txt
 sets.json
+stickers.json
