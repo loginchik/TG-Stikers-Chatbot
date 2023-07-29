@@ -5,7 +5,7 @@ from aiogram import Bot, Dispatcher, types
 from aiogram.utils import executor
 
 from log import activity_logger
-from db import check_table, add_set, select_reply
+from db import check_table, add_set, select_reply, count_unique
 
 
 # Read the token from .env file 
@@ -58,6 +58,26 @@ async def echo_sticker(message: types.Message):
     else:
         await bot.send_sticker(chat_id=message.chat.id, sticker=chosen_answer)
         activity_logger.info('Sent sticker in return')
+ 
+@dp.message_handler(commands=['start', 'help', 'stats'])
+async def define_command(message: types.Message):
+    this_command = message.get_command()
+    
+    # Start command sends start text
+    if this_command == '/start':
+        await bot.send_message(chat_id=message.chat.id, text=message_templates[user_locale]['start'])
+    # Help command sends help text
+    elif this_command == '/help':
+        await bot.send_message(chat_id=message.chat.id, text=message_templates[user_locale]['help'])
+    # Staats command counts statistics and sends it
+    elif this_command == '/stats':
+        sets_num = count_unique(value='setname')
+        emoji_num = count_unique(value='emoji')
+        stats_text = message_templates[user_locale]['stats'].format(sets_num, emoji_num)
+        await bot.send_message(chat_id=message.chat.id, text=stats_text)
+        
+    
+    
  
     
 if __name__ == '__main__':

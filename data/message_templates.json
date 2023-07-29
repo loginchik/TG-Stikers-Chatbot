@@ -4,13 +4,15 @@
         "help": "Send any sticker, and I will send you another sticker with the same emoji assigned", 
         "message is not sticker": "I am sorry, I can understand only commands and stickers", 
         "save sticker": "Just a second, I need to save the pack. I will return to you as soon as I am finished", 
-        "no answer": "I have nothing to say, you killed me"
+        "no answer": "I have nothing to say, you killed me", 
+        "stats": "Saved sets number: {}\nCovered emoji number: {}"
     }, 
     "ru": {
         "start": "18+ \nСоздатель не несёт ответственности за контент, который бот может отправить", 
         "help": "Отправь мне любой стикер, и я отправлю в ответ другой с тем же эмоджи", 
         "message is not sticker": "Прошу прощения, я понимаю только команды и стикеры", 
         "save sticker": "Секундочку, я сохраню этот пак. Вернусь, когда закончу", 
-        "no answer": "Нечего сказать, огонь!"
+        "no answer": "Нечего сказать, огонь!", 
+        "stats": "Стикерпаков сохранено: {}\nЭмоджи знакомо: {}"
     }
 }

@@ -136,3 +136,19 @@ def select_reply(sticker_to_reply: types.Sticker, tablename: str = 'stickers', a
         return answer[0]
     except IndexError:  # if nothing is found 
         return None
+    
+    
+"""Statistics"""
+
+def count_unique(value: str, tablename: str = 'stickers', db_filename: os.PathLike = os.environ.get('DB_NAME')):
+    # Establish connection
+    connection = sqlite3.connect(db_filename)
+    cursor = connection.cursor()
+    # Perform select
+    selected_items = cursor.execute(f'SELECT {value} FROM {tablename}').fetchall()
+    # Close the connection
+    connection.close()
+    # Count unique sets
+    unique_num = len(set(selected_items))
+    
+    return unique_num
