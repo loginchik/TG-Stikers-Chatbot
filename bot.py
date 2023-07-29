@@ -1,15 +1,12 @@
 import random
 import os, dotenv
-import json
-import sqlite3
 
-import requests
 from aiogram import Bot, Dispatcher, types
-from aiogram.utils import executor, exceptions
-import aiogram
-from bs4 import BeautifulSoup
+from aiogram.utils import executor
 
-# import emoji
+import sqlite3
+import emoji
+
 
 # Read the token from .env file 
 # IMPORTANT: never share the token, otherwise the bot can be stollen. 
@@ -20,201 +17,121 @@ token = os.getenv('DEMO_TOKEN')
 bot = Bot(token)
 dp = Dispatcher(bot=bot)
 
-# Load message templates from json file
-with open('message_templates.json') as templates_file:
-    message_templates = json.load(templates_file)
-# Set default user locale 
-user_locale = 'en'
 
-# Обозначение словаря со стикерами
-# Словарь в формате {emoji: [sticker_id, sticker_id]}
-stickers = dict()
+def check_table(tablename: str = 'stickers', db_filename: os.PathLike = os.environ.get('DB_NAME')):
+    """Creates SQLite3 table, if it doesn't exist.
 
-# Файл с названиями используемых стикерпаков
-sets_filename = 'sets.txt'
-
-
-def get_used_sets():
-    # Получает список используемых стикерпаков из файла
-
-    # Открытие файла
-    with open(sets_filename, 'r') as sets_file:
-        # Создание списка
-        sets = [line.strip() for line in sets_file.read().split('\n')]
-
-    # Возвращение списка используемых стикерпаков (только названия)
-    return sets
+    Args:
+        tablename (str, optional): name of the table in db. Defaults to 'stickers'.
+        db_filename (os.PathLike, optional): path to db file. Defaults to os.environ.get('DB_NAME').
+    """
+    db_connection = sqlite3.connect(db_filename)
+    db_cursor = db_connection.cursor()
+    db_cursor.execute(f'CREATE TABLE IF NOT EXISTS {tablename} (file_id TEXT PRIMARY KEY, emoji TEXT NOT NULL, setname TEXT NOT NULL);')
+    db_connection.commit()
+    db_connection.close()
 
 
-def write_new_set(new_set):
-    # Записывает название нового стикерпака в файл со всеми паками
+def check_sticker(sticker: types.Sticker, db_filename: os.PathLike = os.environ.get('DB_NAME')):
+    """Checks if sticker with the same file id is in db.
 
-    # Открывает файл
-    with open(sets_filename, 'a') as sets_file:
-        # Дописывает название в конец
-        sets_file.write(f'{new_set}\n')
+    Args:
+        sticker (types.Sticker): sticker to check.
+        db_filename (os.PathLike, optional): path to db file. Defaults to os.environ.get('DB_NAME').
+
+    Returns:
+        bool: True, if it's not.
+    """
+    received_emoji_id = sticker.file_id
+    connection = sqlite3.connect(db_filename)
+    cursor = connection.cursor()
+    same_in_db = cursor.execute(f'SELECT * FROM stickers WHERE file_id="{received_emoji_id}";').fetchone()
+    connection.close()
+    return same_in_db is None
 
 
-async def download_stickers_to_use():
-    # Загрузка в словарь со стикерами стикеров для использования
+def add_sticker(sticker: types.Sticker, db_filename: os.PathLike = os.environ.get('DB_NAME')):
+    """Adds sticker to db. 
 
-    # Глобальный словарь со стикерами
-    global stickers
+    Args:
+        sticker (types.Sticker): sticker to add.
+        db_filename (os.PathLike, optional): path to db file. Defaults to os.environ.get('DB_NAME').
+    """
+    received_emoji_id = sticker.file_id
+    received_emoji_code = emoji.demojize(sticker.emoji)
+    received_emoji_set = sticker.set_name
+    
+    connection = sqlite3.connect(db_filename)
+    cursor = connection.cursor()
+    cursor.execute(f'INSERT INTO stickers VALUES ("{received_emoji_id}", "{received_emoji_code}", "{received_emoji_set}");')
+    connection.commit()
+    connection.close()
 
-    # Перебор названий паков из файла
-    for stick_set in get_used_sets():
-        try:
-            # Получение информации о сете
-            curr_set = await bot.get_sticker_set(stick_set)
-        except exceptions.InvalidStickersSet:
-            # Пропуск ошибочных сетов
+
+def add_set(*stickers: list):
+    """Adds a set of stickers to db. 
+
+    Args:
+        db_filename (os.PathLike, optional): path to db file. Defaults to os.environ.get('DB_NAME').
+        *stickers (list): list of stickers to add. 
+    """
+    for sticker in stickers:
+        if check_sticker(sticker=sticker, db_filename=os.environ.get('DB_NAME')):
+            add_sticker(sticker=sticker, db_filename=os.environ.get('DB_NAME'))
+        else:
             continue
 
-        # Получение набора стикеров из информации о сете
-        cur_stickers = curr_set.stickers
 
-        # Перебор стикеров из сета
-        for stick in cur_stickers:
-            # Если эмоджи этого стикера нет в словаре стикеров
-            if stick.emoji not in stickers.keys():
-                # Создается новый ключ со словарем из одного стикера
-                stickers[stick.emoji] = [stick.file_id]
-            else:
-                # Иначе дополняется словарь эмоджи
-                stickers[stick.emoji].append(stick.file_id)
+def select_reply(sticker_to_reply: types.Sticker, tablename: str = 'stickers', anything: bool = False, db_filename: os.PathLike = os.environ.get('DB_NAME')) -> str | None:
+    """Selects random sticker as a reply. 
+    
+    Args: 
+        sticker_to_reply (types.Sticker): sticker, which alternative must be found. 
+        tablename (str, optional): table name in db. Defaults to 'stickers'.
+        anything (bool): find any sticker, or only suitable. Defaults to False.
+        db_filename (os.PathLike, optional): path to db file. Defaults to os.environ.get('DB_NAME').
+    Returns:
+        (str | None): id of sticker to reply with, if found.   
+    """
+    connection = sqlite3.connect(db_filename)
+    cursor = connection.cursor()
+    
+    target_emoji = emoji.demojize(sticker_to_reply.emoji)
+    except_set = sticker_to_reply.set_name
+    if anything == False:
+        possible_answers = cursor.execute(f'SELECT file_id FROM {tablename} WHERE emoji = "{target_emoji}" AND NOT setname="{except_set}"').fetchall()
+    else:
+        possible_answers = cursor.execute(f'SELECT file_id FROM {tablename}').fetchall()    
+    connection.close()
+    
+    try: 
+        answer = random.choice(possible_answers)
+        return answer[0]
+    except IndexError:
+        return None
 
-    # Исключение повторяющихся стикеров из словаря стикеров
-    for key in stickers.keys():
-        key = list(set(stickers[key]))
-
-
-def update_sets():
-    # Подгружает стикерпаки с сайта
-
-    # Создание запроса и получение содержимого страницы
-    page = requests.get('https://tlgrm.ru/stickers')
-    page.encoding = 'utf-8'
-    soup = BeautifulSoup(page.text, 'html.parser')
-
-    # Список всех ссылок на стикерпаки с сайта
-    all_a = [a.get('href') for a in soup.find_all(class_='stickers-snippet-item')]
-
-    # Получение из ссылок названий стикерпаков (последний фрагмент ссылки)
-    new_sets = [tag.split('/')[-1] for tag in all_a]
-
-    # Получение списка используемых паков
-    used_sets = get_used_sets()
-
-    # Перебор новых паков с сайта
-    for pack in new_sets:
-        # Добавление тех, которые еще не используются, в список всех паков
-        if pack not in used_sets:
-            write_new_set(pack)
-
+""" Bot functional starts here """
 
 async def startup(_):
-    # Функция при запуске бота
-
-    # Подгружает новые стикерпаки с сайта
-    update_sets()
-    # Загружает словарь со стикерами
-    await download_stickers_to_use()
-    # Сообщает о готовности бота к работе в терминале
-    print('Готов к работе!')
+    check_table()
 
 
 @dp.message_handler(content_types=['sticker'])
-# Реагирует на все входящие стикеры
-async def get_sticker_set(message: types.Message):
-    # Глобальный словарь со стикерами по эмоджи
-    global stickers
+async def echo_sticker(message: types.Message):
     
-    print(message.from_user.language_code)
-
-    # Определение пользовательского стикера
-    user_sticker = message.sticker
-    # print(user_sticker)
-    # Определение стикерпака, в котором пользовательский стикер
-    set_name = user_sticker.set_name
-    set_data = await bot.get_sticker_set(name=user_sticker.set_name)
-    # print(set_data)
+    received_sticker = message.sticker       
+    received_set = await bot.get_sticker_set(name=received_sticker.set_name)
+    stickers_to_add = received_set.stickers
+    add_set(*stickers_to_add)
+    chosen_answer = select_reply(sticker_to_reply=received_sticker)
     
-    if set_name != 'None' and set_data['sticker_type'] == 'regular':
-        this_name = set_data['name']
-        this_is_animated = set_data['is_animated']
-        if this_is_animated:
-            this_animated_status = 1
-        else: 
-            this_animated_status = 0
-        this_stick_count = len(set_data['stickers'])
-        print(f'Received stickerpack data: {this_name}, {this_animated_status}, {this_stick_count}')
+    if chosen_answer is None:
+        chosen_answer = select_reply(sticker_to_reply=received_sticker, anything=True)
+        await bot.send_message(chat_id=message.chat.id, text='Idk')
+        await bot.send_sticker(chat_id=message.chat.id, sticker=chosen_answer)
     else:
-        print('Set is not aropriate')
-
-    # Если этот стикерпак возможно сохранить в программу
-    if set_name != 'None':
-        # Получение списка всех используемых в программе стикерпаков
-        sets = get_used_sets()
-        # Если этого стикера нет
-        if set_name not in sets:
-            # Уведомление пользователя
-            await bot.send_message(chat_id=message.chat.id,
-                                   text=message_templates[user_locale]['save sticker'])
-            # Запись стикерпака в список для программы
-            write_new_set(set_name)
-            # Перезагрузка словаря со стикерами, чтобы включить туда новый пак
-            await download_stickers_to_use()
-
-    # Определение эмоджи, соответствующего пользовательскому стикеру
-    user_emoji = user_sticker.emoji
-    # print(user_emoji)
-    # print(emoji.demojize(user_emoji))
-    # print(emoji.emojize(emoji.demojize(user_emoji)))
-
-    # Если возможно дать ответ на этот стикер
-    if user_emoji in stickers.keys():
-        # Выбор рандомного подходящего стикера
-        random_sticker = random.choice(stickers[user_emoji])
-        # Отправка
-        await bot.send_sticker(chat_id=message.chat.id,
-                               sticker=random_sticker)
-    # Иначе
-    else:
-        # уведомление пользователя о том, что ответа нет
-        await bot.send_message(chat_id=message.chat.id,
-                               text=message_templates[user_locale]['no answer'])
-
-
-# Получение списка всех возможных типов входящих событий
-all_types = list(types.ContentTypes.all())
-# Исключение из списка стикера
-all_types.remove('sticker')
-
-
-@dp.message_handler(commands=['start', 'help'])
-# Обрабатывает текстовые сообщения с командами start и help
-async def start(message: types.Message):
-    # Текст для сообщения
-    start_text = message_templates[user_locale]['start']
-    # Отправка сообщения
-    await bot.send_message(chat_id=message.chat.id, text=start_text)
-
-
-@dp.message_handler(content_types=all_types)
-# Обрабатывает все входящие события, кроме стикеров и команд start и help
-async def answer_to_text(message: types.Message):
-    # Уведомление пользователя
-    await message.reply(text=message_templates[user_locale]['message is not sticker'])
-    # Получение рандомного стикера peace
-    peace_stick = random.choice(stickers['✌️'])
-    # Отправка стикера
-    await bot.send_sticker(chat_id=message.chat.id,
-                           sticker=peace_stick)
-
-
-# Запуск бота
-executor.start_polling(dispatcher=dp, skip_updates=True, on_startup=startup)
-
-
-# TODO: add language change on user locale definition 
-# TODO: or add language manual change 
+        await bot.send_sticker(chat_id=message.chat.id, sticker=chosen_answer)
+ 
+    
+if __name__ == '__main__':
+    executor.start_polling(dispatcher=dp, skip_updates=True, on_startup=startup)
