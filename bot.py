@@ -1,11 +1,14 @@
 import random
 import os, dotenv
+import json
 
 from aiogram import Bot, Dispatcher, types
 from aiogram.utils import executor
 
 import sqlite3
 import emoji
+
+from log import activity_logger
 
 
 # Read the token from .env file 
@@ -16,6 +19,13 @@ token = os.getenv('DEMO_TOKEN')
 # Create bot and dispatcher 
 bot = Bot(token)
 dp = Dispatcher(bot=bot)
+
+# Define default user locale
+user_locale = 'en'
+
+# Read message templates data
+with open('data/message_templates.json') as templates_file:
+    message_templates = json.load(templates_file)
 
 
 def check_table(tablename: str = 'stickers', db_filename: os.PathLike = os.environ.get('DB_NAME')):
@@ -127,10 +137,12 @@ async def echo_sticker(message: types.Message):
     
     if chosen_answer is None:
         chosen_answer = select_reply(sticker_to_reply=received_sticker, anything=True)
-        await bot.send_message(chat_id=message.chat.id, text='Idk')
+        await bot.send_message(chat_id=message.chat.id, text=message_templates[user_locale]['no answer'])
         await bot.send_sticker(chat_id=message.chat.id, sticker=chosen_answer)
+        activity_logger.info('Sent random sticker in return, as suitable was not found')
     else:
         await bot.send_sticker(chat_id=message.chat.id, sticker=chosen_answer)
+        activity_logger.info('Sent sticker in return')
  
     
 if __name__ == '__main__':
