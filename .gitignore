@@ -1,2 +1,9 @@
+# Virtual environment
 venv/
-token.txt
+.env
+
+# Database in SQLite3
+*.db
+
+.DS_Store
+__pycache__/
