@@ -13,7 +13,5 @@ def setup_logger(name: str, filepath: str, level: int =logging.INFO):
     
     return logger
 
-
-info_logger = setup_logger(name='info_logger', filepath='logs/info.log')
-error_logger = setup_logger(name='error_logger', filepath='logs/error.log', level=logging.ERROR)
-    
+activity_logger = setup_logger(name='activity_logger', filepath='logs/activity.log')
+db_logger = setup_logger(name='db_logger', filepath='logs/db.log')
