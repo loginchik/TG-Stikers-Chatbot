@@ -2,7 +2,9 @@
 File contains the functions that are working with the database.
 """
 
-import os 
+import os, dotenv
+
+dotenv.load_dotenv()
 
 stickers_tablename = 'stickers'
 users_statistics_tablename = 'users_stats'

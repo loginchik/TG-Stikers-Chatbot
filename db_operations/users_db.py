@@ -4,8 +4,8 @@ import sqlite3, os
 from functools import partial
 
 from log import db_logger
-from date_func import todays_date
-from tablenames import users_statistics_tablename, db_name
+from .date_func import todays_date
+from .tablenames import users_statistics_tablename, db_name
 
 
 def create_userstats_table(tablename: str = users_statistics_tablename, db_filename: os.PathLike = db_name):
@@ -46,7 +46,7 @@ def add_user_on_start(user_id: int, tablename: str = users_statistics_tablename,
     db_cursor = db_connection.cursor()
     # Add a record
     db_cursor.execute(f'''INSERT INTO {tablename} (user_id, first_usage, last_usage)
-                      VALUES ({user_id}, {todays_date()}, {todays_date()})''')
+                      VALUES ({user_id}, "{todays_date()}", "{todays_date()}")''')
     db_connection.commit()
     # Close connection 
     db_connection.close()
@@ -105,7 +105,7 @@ def update_user_record(user_id: int, column_name: str, new_value: int | str, tab
 
 
 update_last_usage = partial(update_user_record, column_name='last_usage', new_value=todays_date())
-update_commands_count = partial(update_user_record, column_name='commands_count')
+update_commands_count = partial(update_user_record, column_name='commands_use')
 update_stickers_count = partial(update_user_record, column_name='stickers_send_to')
 update_other_messages_count = partial(update_user_record, column_name='other_messages')
 

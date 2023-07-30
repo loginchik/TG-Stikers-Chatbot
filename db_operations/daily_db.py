@@ -4,8 +4,8 @@ import sqlite3, os
 from functools import partial
 
 from log import db_logger
-from date_func import todays_date
-from tablenames import daily_statistics_tablename, db_name
+from .date_func import todays_date
+from .tablenames import daily_statistics_tablename, db_name
 
 
 def create_dailystats_table(tablename: str = daily_statistics_tablename, db_filename: os.PathLike = db_name) -> None:
@@ -19,11 +19,14 @@ def create_dailystats_table(tablename: str = daily_statistics_tablename, db_file
     db_connection = sqlite3.connect(db_filename)
     db_cursor = db_connection.cursor()
     # Create table 
-    db_cursor.execute(f'''CREATE TABLE IF NOT EXISTS {tablename} 
-                      (day DATE PRIMARY KEY, 
+    
+    query_text = f'''CREATE TABLE IF NOT EXISTS {tablename}
+                      (dayID INTEGER PRIMARY KEY AUTOINCREMENT,
+                      day DATE NOT NULL, 
                       commands_use INT DEFAULT 0, 
                       stickers_send INT DEFAULT 0, 
-                      other_messages INT DEFAULT 0);''')
+                      other_messages INT DEFAULT 0);'''
+    db_cursor.execute(query_text)
     db_logger.info(f'Table {tablename} is setup')
     # Save changes 
     db_connection.commit()
@@ -49,7 +52,7 @@ def check_daily_record_exists(day: str = todays_date(), tablename: str = daily_s
     db_connection = sqlite3.connect(db_filename)
     db_cursor = db_connection.cursor()
     # Get value
-    result = db_cursor.execute(f'''SELECT * FROM {tablename} WHERE day={day};''').fetchall()
+    result = db_cursor.execute(f'''SELECT * FROM {tablename} WHERE day="{day}";''').fetchall()
     # Close the connection
     db_connection.close()
     
@@ -77,7 +80,7 @@ def get_daily_value(day: str, column_name: str, tablename: str = daily_statistic
     db_connection = sqlite3.connect(db_filename)
     db_cursor = db_connection.cursor()
     # Get value
-    value = db_cursor.execute(f'''SELECT {column_name} FROM {tablename} WHERE day={day}''').fetchone()
+    value = db_cursor.execute(f'''SELECT {column_name} FROM {tablename} WHERE day="{day}"''').fetchone()
     # Close the connection
     db_connection.close()
     # Return value
@@ -103,7 +106,7 @@ def update_daily_value(day: str, column_name: str, new_value: int, tablename: st
     db_connection = sqlite3.connect(db_filename)
     db_cursor = db_connection.cursor()
     # Get value
-    db_cursor.execute(f'''UPDATE {tablename} SET {column_name}={new_value} WHERE day={day}''')
+    db_cursor.execute(f'''UPDATE {tablename} SET {column_name}={new_value} WHERE day="{day}"''')
     db_connection.commit()
     # Close the connection
     db_connection.close()
@@ -125,9 +128,14 @@ def add_daily_record(day: str = todays_date(), tablename: str = daily_statistics
     # Establish connection
     db_connection = sqlite3.connect(db_filename)
     db_cursor = db_connection.cursor()
+    
+    this_day = todays_date()
+    
     # Get value
-    db_cursor.execute(f'''INSERT INTO {tablename} (day) VALUES ({day})''')
+    query_text = f'''INSERT INTO {tablename} (day) VALUES ("{this_day}")'''
+    db_cursor.execute(query_text)
     db_connection.commit()
+    
     # Close the connection
     db_connection.close()
 

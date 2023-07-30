@@ -4,7 +4,7 @@ from aiogram import types
 from functools import partial
 
 from log import db_logger
-from tablenames import stickers_tablename, db_name
+from .tablenames import stickers_tablename, db_name
 
 
 """ Database create, update and select """

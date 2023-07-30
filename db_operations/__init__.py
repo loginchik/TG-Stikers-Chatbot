@@ -1,5 +1,5 @@
 """Operations performed with the database"""
 
-import daily_db
-import stickers_db
-import users_db
+from . import daily_db
+from . import stickers_db
+from . import users_db

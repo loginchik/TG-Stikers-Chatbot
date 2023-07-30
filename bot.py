@@ -30,6 +30,9 @@ async def startup(_):
     daily_db.create_dailystats_table()
     stickers_db.create_stickers_table()
     users_db.create_userstats_table()
+    
+    if not daily_db.check_daily_record_exists():
+        daily_db.add_daily_record()
 
 
 # Handles incoming stickers
