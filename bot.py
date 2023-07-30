@@ -4,7 +4,7 @@ import dotenv
 from aiogram import Bot, Dispatcher, types
 from aiogram.utils import executor
 
-from log import activity_logger
+from log import activity_logger, improvements_logger
 from db_operations import daily_db, stickers_db, users_db
 
 
@@ -33,6 +33,12 @@ async def startup(_):
     
     if not daily_db.check_daily_record_exists():
         daily_db.add_daily_record()
+        
+    activity_logger.info('Bot startup')
+
+
+async def shutdown(_):
+    activity_logger.info('Bot shut down')
 
 
 def update_user_locale(message: types.Message) -> str:
@@ -52,10 +58,11 @@ def update_user_locale(message: types.Message) -> str:
     
     possible_locales = list(message_templates.keys())
     if message.from_user.locale != current_locale:
-        user_locale = message.from_user.locale
+        user_locale = str(message.from_user.locale)
         if user_locale in possible_locales:
             return user_locale
         else:
+            improvements_logger.info(f'As {user_locale} is not a supported locale, english locale was turned on')
             return 'en'
     else:
         return current_locale
@@ -89,11 +96,12 @@ async def echo_sticker(message: types.Message):
         user_locale_global = update_user_locale(message=message, current_locale=user_locale_global)
         await bot.send_message(chat_id=message.chat.id, text=message_templates[user_locale_global]['no answer'])
         await bot.send_sticker(chat_id=message.chat.id, sticker=chosen_answer)
-        activity_logger.info('Sent random sticker in return, as suitable was not found')
+        improvements_logger.info(f'No answer for {received_sticker.emoji}')
     # Though, if sticker in return is found, then it is send to user
     else:
         await bot.send_sticker(chat_id=message.chat.id, sticker=chosen_answer)
-        activity_logger.info('Sent sticker in return')
+    
+    activity_logger.info('Sent sticker in return')
     
     # Update DB stats 
     users_db.update_last_usage(user_id=message.from_user.id)
@@ -149,6 +157,7 @@ async def define_command(message: types.Message):
     users_db.update_last_usage(user_id=message.from_user.id)
     users_db.add_command_use(user_id=message.from_user.id)
     daily_db.add_commands_use()
+    activity_logger.info('Command sucessfull')
 
         
 # Handles all other messages
@@ -164,7 +173,8 @@ async def unknown_message(message: types.Message):
     users_db.update_last_usage(user_id=message.from_user.id)
     users_db.add_other_message(user_id=message.from_user.id)
     daily_db.add_other_messages()
+    activity_logger.info(f'Unknown message: {message.text}')
 
     
 if __name__ == '__main__':
-    executor.start_polling(dispatcher=dp, skip_updates=True, on_startup=startup)
+    executor.start_polling(dispatcher=dp, skip_updates=True, on_startup=startup, on_shutdown=shutdown)

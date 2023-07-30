@@ -37,11 +37,11 @@ def create_stickers_table(tablename: str = stickers_tablename, db_filename: os.P
     db_cursor = db_connection.cursor()
     # Create table 
     db_cursor.execute(f'CREATE TABLE IF NOT EXISTS {tablename} (file_id TEXT PRIMARY KEY, emoji TEXT NOT NULL, setname TEXT NOT NULL);')
-    db_logger.info(f'Table {tablename} is setup')
     # Save changes 
     db_connection.commit()
     # Close the connection
     db_connection.close()
+    db_logger.info(f'STICKERS DB. Table {tablename} is setup')
 
 
 def check_sticker(sticker: types.Sticker, db_filename: os.PathLike = db_name, 
@@ -86,10 +86,11 @@ def add_sticker(sticker: types.Sticker, db_filename: os.PathLike = db_name,
     cursor = connection.cursor()
     # Add new data and save changes 
     cursor.execute(f'INSERT INTO {tablename} VALUES ("{received_emoji_id}", "{received_emoji_code}", "{received_emoji_set}");')
-    db_logger.info(f'New sticker from {received_emoji_set} for emoji "{received_emoji_code}" saved')
     connection.commit()
     # Close the connection
     connection.close()
+    
+    db_logger.info(f'STICKERS DB. New sticker saved: from {received_emoji_set} for {received_emoji_code}')
 
 
 def add_set(*stickers: list) -> None:

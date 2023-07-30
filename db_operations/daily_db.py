@@ -27,7 +27,7 @@ def create_dailystats_table(tablename: str = daily_statistics_tablename, db_file
                       stickers_send INT DEFAULT 0, 
                       other_messages INT DEFAULT 0);'''
     db_cursor.execute(query_text)
-    db_logger.info(f'Table {tablename} is setup')
+    db_logger.info(f'DAILY DB. Table {tablename} is setup')
     # Save changes 
     db_connection.commit()
     # Close the connection
@@ -110,6 +110,8 @@ def update_daily_value(day: str, column_name: str, new_value: int, tablename: st
     db_connection.commit()
     # Close the connection
     db_connection.close()
+    
+    db_logger.info(f'DAILY DB. Daily record update: {column_name} is set to {new_value}')
 
    
 update_commands_use = partial(update_daily_value, column_name='commands_use')
@@ -138,6 +140,8 @@ def add_daily_record(day: str = todays_date(), tablename: str = daily_statistics
     
     # Close the connection
     db_connection.close()
+    
+    db_logger.info(f'DAILY DB. Daily record creation: {this_day}')
 
 
 def add_stickers_send(day: str = todays_date(), tablename: str = daily_statistics_tablename, db_filename: os.PathLike = db_name) -> None:

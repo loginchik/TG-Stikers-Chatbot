@@ -26,11 +26,12 @@ def create_userstats_table(tablename: str = users_statistics_tablename, db_filen
                       commands_use INT DEFAULT 0, 
                       stickers_send_to INT DEFAULT 0, 
                       other_messages INT DEFAULT 0);''')
-    db_logger.info(f'Table {tablename} is setup')
     # Save changes 
     db_connection.commit()
     # Close the connection
     db_connection.close()
+    
+    db_logger.info(f'USERS DB. Table {tablename} is setup')
 
     
 def add_user_on_start(user_id: int, tablename: str = users_statistics_tablename, db_filename: os.PathLike = db_name):
@@ -50,6 +51,8 @@ def add_user_on_start(user_id: int, tablename: str = users_statistics_tablename,
     db_connection.commit()
     # Close connection 
     db_connection.close()
+    
+    db_logger.info(f'USERS DB. User creation')
     
 
 def user_exists(user_id: int, tablename: str = users_statistics_tablename, db_filename: os.PathLike = db_name) -> bool:
@@ -102,6 +105,8 @@ def update_user_record(user_id: int, column_name: str, new_value: int | str, tab
     
     # Close connection 
     db_connection.close()
+    
+    db_logger.info(f'USERS DB. User record update: {column_name} is set to {new_value}')
 
 
 update_last_usage = partial(update_user_record, column_name='last_usage', new_value=todays_date())
