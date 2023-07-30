@@ -6,12 +6,11 @@ env/
 # Database in SQLite3
 *.db
 
+# System files 
 .DS_Store
 __pycache__/
 .vscode/
+.git/
 
+# Logs
 *.log
-
-sets.txt
-sets.json
-stickers.json
