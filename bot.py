@@ -1,11 +1,14 @@
-import os, json
+import os, json, shutil
 import dotenv
 
 from aiogram import Bot, Dispatcher, types
 from aiogram.utils import executor
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.cron import CronTrigger
 
 from logs.log import activity_logger, improvements_logger
 from db_operations import daily_db, stickers_db, users_db
+import make_report as mr
 
 
 # Read the token from .env file 
@@ -24,15 +27,18 @@ user_locale_global = 'en'
 with open('data/message_templates.json') as templates_file:
     message_templates = json.load(templates_file)
     
+    
+def create_daily_row():
+    if not daily_db.check_daily_record_exists():
+        daily_db.add_daily_record()
+
 
 async def startup(_):
     # Check tables exsit on startup
     daily_db.create_dailystats_table()
     stickers_db.create_stickers_table()
     users_db.create_userstats_table()
-    
-    if not daily_db.check_daily_record_exists():
-        daily_db.add_daily_record()
+    create_daily_row()
         
     activity_logger.info('Bot startup')
 
@@ -175,6 +181,36 @@ async def unknown_message(message: types.Message):
     daily_db.add_other_messages()
     activity_logger.info(f'Unknown message: {message.text}')
 
+
+""" Report sending function """
+
+async def daily_stats():
+    # Collect report text 
+    report_text = mr.collect_stats()
+    # Send report file and report text 
+    await bot.send_message(chat_id=os.environ.get('ADMIN_ID'), text=report_text)
+    
+    for filepath, filename, caption in zip(mr.filepaths, mr.filenames, mr.file_captions):
+        await bot.send_document(chat_id=os.environ.get('ADMIN_ID'), 
+                                document=types.InputFile(path_or_bytesio=filepath, 
+                                                         filename=filename), 
+                                caption=caption, disable_notification=True)
+    # Log report is sent
+    activity_logger.info('Daily report sent')
+
+
+""" Scheduler setup """
+
+# Initialize scheduler 
+scheduler = AsyncIOScheduler()
+# Create triggers 
+midnight_cron = CronTrigger(hour=0, minute=0, jitter=120)
+report_cron = CronTrigger(hour=23, minute=0, jitter=360)
+# Create jobs 
+scheduler.add_job(func=create_daily_row, trigger=midnight_cron)  # creates daily row in db
+scheduler.add_job(func=daily_stats, trigger=report_cron)  # sends report to admin
+   
     
 if __name__ == '__main__':
+    scheduler.start()
     executor.start_polling(dispatcher=dp, skip_updates=True, on_startup=startup, on_shutdown=shutdown)
