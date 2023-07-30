@@ -1,20 +1,32 @@
 {
     "en": {
-        "start": "18+ \nThe creator is not responsible for the content that can be sent by the bot.", 
-        "help": "Send any sticker, and I will send you another sticker with the same emoji assigned", 
-        "message is not sticker": "I am sorry, I can understand only commands and stickers", 
+        "start": "18+ \nNote that the creator is not responsible for the content that can be sent by the bot.\n\nCommands are:\n- /help to get instructions\n- /about to get information about the bot\n- /stats to get statistics on the bot", 
+        
+        "help": "The bot is set up to define emoji, that is assigned with the sticker, and to send a sticker with the same emoji assigned from another package. In case there is no other sticker in return, bot sends a message about it and any random sticker from its collection.\n\nThe collection of stickers is being updated automatically. Bot checked every sticker it receives and immediately saves new sets, if there are any.\n\nAs stickers in the collection are not checked manually, there can be inappropriate content, thus, use the bot carefully and be prepared for bad words. It's the responsibility of sticker's author, not a bot's creator.\n\nEnjoy your use! 🤖", 
+        
+        "message is not sticker": "As far as I a sticker bot, I am taught to answer commands and stickers, not words. I'm sorry...", 
+        
         "save sticker": "Just a second, I need to save the pack. I will return to you as soon as I am finished", 
-        "no answer": "I have nothing to say, you killed me", 
-        "stats": "Saved sets number: {}\nCovered emoji number: {}\n\nSend {} stickers to {} users in total",
-        "about": "I dont know what to tell you"
+        
+        "no answer": "Unfortunatelly, I have no alternatives in my collection... Here is a random sticker, I liked", 
+        
+        "stats": "There are {} sticker sets in my collection\nThey cover {} emojies\n\nDuring the hard work, I've sent {} stickers to {} users",
+        
+        "about": "The bot is set up to define emoji, that is assigned with the sticker, and to send a sticker with the same emoji assigned from another package. The idea was spontaneous.\n\nData saved from you: I save only your TG ID to remember your activity (number of commands you used, number of stickers I've sent to you, and number of other messages that I've received from you). There is nothing to worry about, this data is used only for analytics by the creator.\n\nCode to the bot is public, you can find it on GitHub and check."
     }, 
     "ru": {
-        "start": "18+ \nСоздатель не несёт ответственности за контент, который бот может отправить", 
-        "help": "Отправь мне любой стикер, и я отправлю в ответ другой с тем же эмоджи", 
-        "message is not sticker": "Прошу прощения, я понимаю только команды и стикеры", 
+        "start": "18+ \nСоздатель не несёт ответственности за контент, который бот может отправить\n\nКоманды:\n- /help - инструкции\n- /about - информация о боте\n- /stats - стастика", 
+        
+        "help": "Бот распознает эмоджи, связанное с полученным стикером, и отправляет в ответ стикер с таким же эмоджи из другого набора. Если аналогов нет, бот сообщает об этом и отправляет случайно выбранный из своей коллекции стикер.\n\nКоллекция стикеров обновляется автоматически. Бот проверяет каждый стикер, который ему присылают, и если набор новый, то сразу же сохраняет его в коллекцию.\n\nСтикеры в коллекции не проверяются, поэтому бот может присылать нецензурный контент. Будьте готовы к этому. Ответственность за содержание стикеров лежит на их создателях, а не на разработчике бота.\n\nПриятного пользования! 🤖",
+
+        "message is not sticker": "Я стикер-бот, поэтому умею распознавать только команды и стикеры. Мне жаль... ", 
+        
         "save sticker": "Секундочку, я сохраню этот пак. Вернусь, когда закончу", 
-        "no answer": "Нечего сказать, огонь!", 
-        "stats": "Стикерпаков сохранено: {}\nЭмоджи знакомо: {}\n\nОтправлено {} стикеров {} людям", 
-        "about": "Тут и сказать нечего..."
+        
+        "no answer": "К сожалению, мне нечего предложить в ответ... Но вот случайный стикер, который мне нравится", 
+        
+        "stats": "В моей коллекции {} наборов стикеров\nОни покрывают {} эмоджи\n\nЗа время нелёгкой работы я отправил {} стикеров {} людям", 
+        
+        "about": "Бот распознает эмоджи, связанное с полученным стикером, и отправляет в ответ стикер с таким же эмоджи из другого набора. Продукт спонтанной идеи.\n\nСохраняемые данные пользователей: я сохраняю только ID пользователя, чтобы помнить его активность (количество использованных команд, количество отправленных пользователю стикеров и количество иных сообщений, полученных от пользователя). Беспокоиться не о чем, эти данные используются только для внутренней аналитики.\n\nКод публичный, его можно найти на GitHub."
     }
 }
