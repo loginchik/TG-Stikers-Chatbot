@@ -3,7 +3,7 @@
 import sqlite3, os
 from functools import partial
 
-from log import db_logger
+from logs.log import db_logger
 from .date_func import todays_date
 from .tablenames import users_statistics_tablename, db_name
 

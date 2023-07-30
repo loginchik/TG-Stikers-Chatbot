@@ -4,7 +4,7 @@ import dotenv
 from aiogram import Bot, Dispatcher, types
 from aiogram.utils import executor
 
-from log import activity_logger, improvements_logger
+from logs.log import activity_logger, improvements_logger
 from db_operations import daily_db, stickers_db, users_db
 
 

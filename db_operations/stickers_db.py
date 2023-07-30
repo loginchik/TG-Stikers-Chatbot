@@ -3,7 +3,7 @@ import emoji
 from aiogram import types
 from functools import partial
 
-from log import db_logger
+from logs.log import db_logger
 from .tablenames import stickers_tablename, db_name
 
 
