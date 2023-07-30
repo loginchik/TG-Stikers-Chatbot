@@ -26,6 +26,6 @@ def setup_logger(name: str, filepath: os.PathLike, level: int | str = logging.IN
     return logger
 
 # Loggers to use
-activity_logger = setup_logger(name='activity_logger', filepath='logs/activity.log')
-db_logger = setup_logger(name='db_logger', filepath='logs/db.log')
-improvements_logger = setup_logger(name='improve_logger', filepath='logs/improvements.log')
+activity_logger = setup_logger(name='activity_logger', filepath=os.path.abspath('logs/activity.log'))
+db_logger = setup_logger(name='db_logger', filepath=os.path.abspath('logs/db.log'))
+improvements_logger = setup_logger(name='improve_logger', filepath=os.path.abspath('logs/improvements.log'))

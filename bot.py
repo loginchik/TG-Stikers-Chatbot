@@ -24,7 +24,7 @@ dp = Dispatcher(bot=bot)
 user_locale_global = 'en'
 
 # Read message templates data
-with open('data/message_templates.json') as templates_file:
+with open(os.path.abspath('data/message_templates.json')) as templates_file:
     message_templates = json.load(templates_file)
     
     
