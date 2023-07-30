@@ -117,17 +117,26 @@ async def define_command(message: types.Message):
         user_locale_global = update_user_locale(message=message)
         await bot.send_message(chat_id=message.chat.id, text=message_templates[user_locale_global]['start'])
         activity_logger.info('Command - /start')
+    
     # Help command sends help text
     elif this_command == '/help':      
         user_locale_global = update_user_locale(message=message)  
         await bot.send_message(chat_id=message.chat.id, text=message_templates[user_locale_global]['help'])
         activity_logger.info('Command - /help')
+    
     # Staats command counts statistics and sends it
     elif this_command == '/stats':
         sets_num = stickers_db.count_sets()
         emoji_num = stickers_db.count_emoji()
+        users_count = users_db.count_users()
+        stickers_send_count = users_db.count_stickers()
+        
+        
         user_locale_global = update_user_locale(message=message)
-        stats_text = message_templates[user_locale_global]['stats'].format(sets_num, emoji_num)
+        stats_text = message_templates[user_locale_global]['stats'].format(sets_num, 
+                                                                           emoji_num, 
+                                                                           stickers_send_count, 
+                                                                           users_count)
         await bot.send_message(chat_id=message.chat.id, text=stats_text)
         activity_logger.info('Command - /stats')
     

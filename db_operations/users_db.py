@@ -177,3 +177,53 @@ def add_other_message(user_id: int, tablename: str = users_statistics_tablename,
     current_value = get_current_other_messages_count(user_id=user_id, tablename=tablename, db_filename=db_filename)
     new_value = current_value + 1
     update_other_messages_count(user_id=user_id, new_value=new_value, tablename=tablename, db_filename=db_filename)
+    
+    
+    """ Statistics """
+    
+def count_users(tablename: str = users_statistics_tablename, db_filename: os.PathLike = db_name) -> int:
+    """Counts users that are in the db. 
+    As all the rows are unique, is it enough to count the rows.
+
+    Args:
+        tablename (str, optional): name of the table. Defaults to users_statistics_tablename.
+        db_filename (os.PathLike, optional): path to db file. Defaults to db_name.
+
+    Returns:
+        int: number of users. 
+    """
+    # Establish connection
+    db_connection = sqlite3.connect(db_filename)
+    db_cursor = db_connection.cursor()
+    
+    # Gather data 
+    users = db_cursor.execute(f'''SELECT * FROM {tablename}''').fetchall()
+    
+    # Close connection 
+    db_connection.close()
+    
+    return len(users)
+    
+    
+def count_stickers(column_name: str = 'stickers_send_to', tablename: str = users_statistics_tablename, db_filename: os.PathLike = db_name) -> int:
+    """Sums the values of 'stickers_send_to' column, or any other specified. 
+
+    Args:
+        column_name (str, optional): name of the column to sum. Defaults to 'stickers_send_to'.
+        tablename (str, optional): name of the table. Defaults to users_statistics_tablename.
+        db_filename (os.PathLike, optional): path to db file. Defaults to db_filename.
+
+    Returns:
+        int: result. 
+    """
+    # Establish connection
+    db_connection = sqlite3.connect(db_filename)
+    db_cursor = db_connection.cursor()
+    
+    # Update the data
+    result = db_cursor.execute(f'''SELECT SUM({column_name}) FROM {tablename}''').fetchone()
+    
+    # Close connection 
+    db_connection.close()
+    
+    return result[0]
