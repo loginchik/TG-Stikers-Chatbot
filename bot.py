@@ -102,7 +102,7 @@ async def echo_sticker(message: types.Message):
 
  
 # Handles commands
-@dp.message_handler(commands=['start', 'help', 'stats'])
+@dp.message_handler(commands=['start', 'help', 'stats', 'about'])
 async def define_command(message: types.Message):
     global user_locale_global
     
@@ -139,6 +139,11 @@ async def define_command(message: types.Message):
                                                                            users_count)
         await bot.send_message(chat_id=message.chat.id, text=stats_text)
         activity_logger.info('Command - /stats')
+    
+    elif this_command == '/about':
+        user_locale_global = update_user_locale(message=message)
+        await bot.send_message(chat_id=message.chat.id, text=message_templates[user_locale_global]['about'])
+    
     
     # Update DB stats 
     users_db.update_last_usage(user_id=message.from_user.id)
