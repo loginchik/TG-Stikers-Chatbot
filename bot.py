@@ -18,7 +18,7 @@ bot = Bot(token)
 dp = Dispatcher(bot=bot)
 
 # Define default user locale
-user_locale = 'en'
+user_locale_global = 'en'
 
 # Read message templates data
 with open('data/message_templates.json') as templates_file:
@@ -35,6 +35,32 @@ async def startup(_):
         daily_db.add_daily_record()
 
 
+def update_user_locale(message: types.Message) -> str:
+    """Func gets message to define user locale and current locale status. 
+    Depending on the results, returns either user locale, or 'en'.
+
+    Args:
+        message (types.Message): message from user. 
+
+    Returns:
+        str: new locale. 
+    """
+    global message_templates
+    global user_locale_global
+    
+    current_locale = user_locale_global
+    
+    possible_locales = list(message_templates.keys())
+    if message.from_user.locale != current_locale:
+        user_locale = message.from_user.locale
+        if user_locale in possible_locales:
+            return user_locale
+        else:
+            return 'en'
+    else:
+        return current_locale
+
+
 # Handles incoming stickers
 @dp.message_handler(content_types=['sticker'])
 async def echo_sticker(message: types.Message):
@@ -43,6 +69,8 @@ async def echo_sticker(message: types.Message):
     Args:
         message (types.Message): message from user. 
     """
+    global user_locale_global
+    
     # Gather received sticker
     received_sticker = message.sticker     
     # Define it's set  
@@ -58,7 +86,8 @@ async def echo_sticker(message: types.Message):
         # then any sticker is chosen
         chosen_answer = stickers_db.select_reply(sticker_to_reply=received_sticker, anything=True)
         # and send to user with a notification
-        await bot.send_message(chat_id=message.chat.id, text=message_templates[user_locale]['no answer'])
+        user_locale_global = update_user_locale(message=message, current_locale=user_locale_global)
+        await bot.send_message(chat_id=message.chat.id, text=message_templates[user_locale_global]['no answer'])
         await bot.send_sticker(chat_id=message.chat.id, sticker=chosen_answer)
         activity_logger.info('Sent random sticker in return, as suitable was not found')
     # Though, if sticker in return is found, then it is send to user
@@ -75,6 +104,8 @@ async def echo_sticker(message: types.Message):
 # Handles commands
 @dp.message_handler(commands=['start', 'help', 'stats'])
 async def define_command(message: types.Message):
+    global user_locale_global
+    
     this_command = message.get_command()
     
     # Start command sends start text
@@ -83,18 +114,20 @@ async def define_command(message: types.Message):
         # Add user, if they aren't in db already
         if not users_db.user_exists(user_id=message.from_user.id):
             users_db.add_user_on_start(user_id=message.from_user.id)
-        
-        await bot.send_message(chat_id=message.chat.id, text=message_templates[user_locale]['start'])
+        user_locale_global = update_user_locale(message=message)
+        await bot.send_message(chat_id=message.chat.id, text=message_templates[user_locale_global]['start'])
         activity_logger.info('Command - /start')
     # Help command sends help text
-    elif this_command == '/help':        
-        await bot.send_message(chat_id=message.chat.id, text=message_templates[user_locale]['help'])
+    elif this_command == '/help':      
+        user_locale_global = update_user_locale(message=message)  
+        await bot.send_message(chat_id=message.chat.id, text=message_templates[user_locale_global]['help'])
         activity_logger.info('Command - /help')
     # Staats command counts statistics and sends it
     elif this_command == '/stats':
         sets_num = stickers_db.count_sets()
         emoji_num = stickers_db.count_emoji()
-        stats_text = message_templates[user_locale]['stats'].format(sets_num, emoji_num)
+        user_locale_global = update_user_locale(message=message)
+        stats_text = message_templates[user_locale_global]['stats'].format(sets_num, emoji_num)
         await bot.send_message(chat_id=message.chat.id, text=stats_text)
         activity_logger.info('Command - /stats')
     
@@ -106,9 +139,11 @@ async def define_command(message: types.Message):
         
 # Handles all other messages
 @dp.message_handler()
-async def unknown_message(message: types.Message):    
+async def unknown_message(message: types.Message):  
+    global user_locale_global  
     # Send notification to user 
-    await bot.send_message(chat_id=message.chat.id, text=message_templates[user_locale]['message is not sticker'])
+    user_locale_global = update_user_locale(message=message)
+    await bot.send_message(chat_id=message.chat.id, text=message_templates[user_locale_global]['message is not sticker'])
     activity_logger.info('Message is nor sticker, neither command')
     
     # Update DB stats
