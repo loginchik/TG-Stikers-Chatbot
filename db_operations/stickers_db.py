@@ -1,14 +1,13 @@
-"""
-File contains the functions that are working with the database.
-"""
-
 import sqlite3, os, random
 import dotenv, emoji
 from aiogram import types
 
 from log import db_logger
+from date_func import todays_date
 
 dotenv.load_dotenv()
+
+
 
 def gather_sticker_data(sticker: types.Sticker) -> tuple[str, str, str]:
     """Unpacks sticker data.
