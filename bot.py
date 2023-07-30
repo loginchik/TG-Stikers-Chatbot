@@ -59,6 +59,7 @@ async def echo_sticker(message: types.Message):
         await bot.send_sticker(chat_id=message.chat.id, sticker=chosen_answer)
         activity_logger.info('Sent sticker in return')
  
+# Handles commands
 @dp.message_handler(commands=['start', 'help', 'stats'])
 async def define_command(message: types.Message):
     this_command = message.get_command()
@@ -66,19 +67,26 @@ async def define_command(message: types.Message):
     # Start command sends start text
     if this_command == '/start':
         await bot.send_message(chat_id=message.chat.id, text=message_templates[user_locale]['start'])
+        activity_logger.info('Command - /start')
     # Help command sends help text
     elif this_command == '/help':
         await bot.send_message(chat_id=message.chat.id, text=message_templates[user_locale]['help'])
+        activity_logger.info('Command - /help')
     # Staats command counts statistics and sends it
     elif this_command == '/stats':
         sets_num = count_unique(value='setname')
         emoji_num = count_unique(value='emoji')
         stats_text = message_templates[user_locale]['stats'].format(sets_num, emoji_num)
         await bot.send_message(chat_id=message.chat.id, text=stats_text)
+        activity_logger.info('Command - /stats')
         
-    
-    
- 
+# Handles all other messages
+@dp.message_handler()
+async def unknown_message(message: types.Message):
+    # Send notification to user 
+    await bot.send_message(chat_id=message.chat.id, text=message_templates[user_locale]['message is not sticker'])
+    activity_logger.info('Message is nor sticker, neither command')
+
     
 if __name__ == '__main__':
     executor.start_polling(dispatcher=dp, skip_updates=True, on_startup=startup)
