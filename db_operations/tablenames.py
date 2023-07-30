@@ -10,4 +10,4 @@ stickers_tablename = 'stickers'
 users_statistics_tablename = 'users_stats'
 daily_statistics_tablename = 'daily_stats'
 
-db_name = os.environ.get('DB_NAME')
+db_name = os.environ.get('DB_NAME', default='data/database.db')
