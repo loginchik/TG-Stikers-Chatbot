@@ -93,7 +93,7 @@ async def echo_sticker(message: types.Message):
         # then any sticker is chosen
         chosen_answer = stickers_db.select_reply(sticker_to_reply=received_sticker, anything=True)
         # and send to user with a notification
-        user_locale_global = update_user_locale(message=message, current_locale=user_locale_global)
+        user_locale_global = update_user_locale(message=message)
         await bot.send_message(chat_id=message.chat.id, text=message_templates[user_locale_global]['no answer'])
         await bot.send_sticker(chat_id=message.chat.id, sticker=chosen_answer)
         improvements_logger.info(f'No answer for {received_sticker.emoji}')
