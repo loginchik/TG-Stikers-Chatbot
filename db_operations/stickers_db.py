@@ -1,12 +1,13 @@
 import sqlite3, os, random
-import dotenv, emoji
+import emoji
 from aiogram import types
+from functools import partial
 
 from log import db_logger
-from date_func import todays_date
+from tablenames import stickers_tablename, db_name
 
-dotenv.load_dotenv()
 
+""" Database create, update and select """
 
 
 def gather_sticker_data(sticker: types.Sticker) -> tuple[str, str, str]:
@@ -23,12 +24,13 @@ def gather_sticker_data(sticker: types.Sticker) -> tuple[str, str, str]:
     stick_set = sticker.set_name  # set name, which sticker belongs to
     return (stick_id, stick_code, stick_set)
 
-def check_table(tablename: str = 'stickers', db_filename: os.PathLike = os.environ.get('DB_NAME')):
+
+def create_stickers_table(tablename: str = stickers_tablename, db_filename: os.PathLike = db_name) -> None:
     """Creates SQLite3 table, if it doesn't exist.
 
     Args:
-        tablename (str, optional): name of the table in db. Defaults to 'stickers'.
-        db_filename (os.PathLike, optional): path to db file. Defaults to os.environ.get('DB_NAME').
+        tablename (str, optional): name of the table in db. Defaults to stickers_tablename.
+        db_filename (os.PathLike, optional): path to db file. Defaults to db_name.
     """
     # Establish connection 
     db_connection = sqlite3.connect(db_filename)
@@ -42,14 +44,14 @@ def check_table(tablename: str = 'stickers', db_filename: os.PathLike = os.envir
     db_connection.close()
 
 
-def check_sticker(sticker: types.Sticker, db_filename: os.PathLike = os.environ.get('DB_NAME'), 
-                  tablename: str = 'stickers'):
+def check_sticker(sticker: types.Sticker, db_filename: os.PathLike = db_name, 
+                  tablename: str = stickers_tablename) -> None:
     """Checks if sticker with the same file id is in db.
 
     Args:
         sticker (types.Sticker): sticker to check.
-        db_filename (os.PathLike, optional): path to db file. Defaults to os.environ.get('DB_NAME').
-        tablename (str, optional): name of the table in db. Defaults to 'stickers'.
+        db_filename (os.PathLike, optional): path to db file. Defaults to db_name.
+        tablename (str, optional): name of the table in db. Defaults to stickers_tablename.
 
     Returns:
         bool: True, if it's not.
@@ -68,14 +70,14 @@ def check_sticker(sticker: types.Sticker, db_filename: os.PathLike = os.environ.
     return same_in_db is None
 
 
-def add_sticker(sticker: types.Sticker, db_filename: os.PathLike = os.environ.get('DB_NAME'), 
-                tablename: str = 'stickers'):
+def add_sticker(sticker: types.Sticker, db_filename: os.PathLike = db_name, 
+                tablename: str = stickers_tablename) -> None:
     """Adds sticker to db. 
 
     Args:
         sticker (types.Sticker): sticker to add.
-        db_filename (os.PathLike, optional): path to db file. Defaults to os.environ.get('DB_NAME').
-        tablename (str, optional): name of the table in db. Defaults to 'stickers'.
+        db_filename (os.PathLike, optional): path to db file. Defaults to db_name.
+        tablename (str, optional): name of the table in db. Defaults to stickers_tablename.
     """
     # Gather sticker's data
     received_emoji_id, received_emoji_code, received_emoji_set = gather_sticker_data(sticker)
@@ -90,28 +92,29 @@ def add_sticker(sticker: types.Sticker, db_filename: os.PathLike = os.environ.ge
     connection.close()
 
 
-def add_set(*stickers: list):
+def add_set(*stickers: list) -> None:
     """Adds a set of stickers to db. 
 
     Args:
-        db_filename (os.PathLike, optional): path to db file. Defaults to os.environ.get('DB_NAME').
+        db_filename (os.PathLike, optional): path to db file. Defaults to db_name.
         *stickers (list): list of stickers to add. 
     """
+    global db_name
     for sticker in stickers:
-        if check_sticker(sticker=sticker, db_filename=os.environ.get('DB_NAME')):
-            add_sticker(sticker=sticker, db_filename=os.environ.get('DB_NAME'))
+        if check_sticker(sticker=sticker, db_filename=db_name):
+            add_sticker(sticker=sticker, db_filename=db_name)
         else:
             continue
 
 
-def select_reply(sticker_to_reply: types.Sticker, tablename: str = 'stickers', anything: bool = False, db_filename: os.PathLike = os.environ.get('DB_NAME')) -> str | None:
+def select_reply(sticker_to_reply: types.Sticker, tablename: str = stickers_tablename, anything: bool = False, db_filename: os.PathLike = db_name) -> str | None:
     """Selects random sticker as a reply. 
     
     Args: 
         sticker_to_reply (types.Sticker): sticker, which alternative must be found. 
-        tablename (str, optional): table name in db. Defaults to 'stickers'.
+        tablename (str, optional): table name in db. Defaults to stickers_tablename.
         anything (bool): find any sticker, or only suitable. Defaults to False.
-        db_filename (os.PathLike, optional): path to db file. Defaults to os.environ.get('DB_NAME').
+        db_filename (os.PathLike, optional): path to db file. Defaults to db_name.
     Returns:
         (str | None): id of sticker to reply with, if found.   
     """
@@ -137,9 +140,19 @@ def select_reply(sticker_to_reply: types.Sticker, tablename: str = 'stickers', a
         return None
     
     
-"""Statistics"""
+""" Statistics """
 
-def count_unique(value: str, tablename: str = 'stickers', db_filename: os.PathLike = os.environ.get('DB_NAME')):
+def count_unique(value: str, tablename: str = stickers_tablename, db_filename: os.PathLike = db_name) -> int:
+    """Counts unique values in the column of the table
+
+    Args:
+        value (str): column name in the table to analyze.
+        tablename (str, optional): table to analyze. Defaults to stickers_tablename.
+        db_filename (os.PathLike, optional): path to db file. Defaults to db_name.
+
+    Returns:
+        int: number of unique items.
+    """
     # Establish connection
     connection = sqlite3.connect(db_filename)
     cursor = connection.cursor()
@@ -151,3 +164,7 @@ def count_unique(value: str, tablename: str = 'stickers', db_filename: os.PathLi
     unique_num = len(set(selected_items))
     
     return unique_num
+
+
+count_sets = partial(count_unique, value='setname')
+count_emoji = partial(count_unique, value='emoji')

@@ -5,7 +5,7 @@ from aiogram import Bot, Dispatcher, types
 from aiogram.utils import executor
 
 from log import activity_logger
-from db import check_table, add_set, select_reply, count_unique
+from db_operations import daily_db, stickers_db, users_db
 
 
 # Read the token from .env file 
@@ -26,9 +26,13 @@ with open('data/message_templates.json') as templates_file:
     
 
 async def startup(_):
-    # Check table exsits on startup
-    check_table()
+    # Check tables exsit on startup
+    daily_db.create_dailystats_table()
+    stickers_db.create_stickers_table()
+    users_db.create_userstats_table()
 
+
+# Handles incoming stickers
 @dp.message_handler(content_types=['sticker'])
 async def echo_sticker(message: types.Message):
     """Accepts message with a sticker and sends some sticker in return 
@@ -41,15 +45,15 @@ async def echo_sticker(message: types.Message):
     # Define it's set  
     received_set = await bot.get_sticker_set(name=received_sticker.set_name)
     # Add set to db, if necessary
-    add_set(*received_set.stickers)
+    stickers_db.add_set(*received_set.stickers)
     # Choose sticker in return 
-    chosen_answer = select_reply(sticker_to_reply=received_sticker)
+    chosen_answer = stickers_db.select_reply(sticker_to_reply=received_sticker)
     
     # If return sticker was not found
     # which means that other packages do not have a sticker with such emoji
     if chosen_answer is None:
         # then any sticker is chosen
-        chosen_answer = select_reply(sticker_to_reply=received_sticker, anything=True)
+        chosen_answer = stickers_db.select_reply(sticker_to_reply=received_sticker, anything=True)
         # and send to user with a notification
         await bot.send_message(chat_id=message.chat.id, text=message_templates[user_locale]['no answer'])
         await bot.send_sticker(chat_id=message.chat.id, sticker=chosen_answer)
@@ -58,6 +62,12 @@ async def echo_sticker(message: types.Message):
     else:
         await bot.send_sticker(chat_id=message.chat.id, sticker=chosen_answer)
         activity_logger.info('Sent sticker in return')
+    
+    # Update DB stats 
+    users_db.update_last_usage(user_id=message.from_user.id)
+    users_db.add_sticker_send(user_id=message.from_user.id)
+    daily_db.add_stickers_send()
+
  
 # Handles commands
 @dp.message_handler(commands=['start', 'help', 'stats'])
@@ -66,26 +76,42 @@ async def define_command(message: types.Message):
     
     # Start command sends start text
     if this_command == '/start':
+        
+        # Add user, if they aren't in db already
+        if not users_db.user_exists(user_id=message.from_user.id):
+            users_db.add_user_on_start(user_id=message.from_user.id)
+        
         await bot.send_message(chat_id=message.chat.id, text=message_templates[user_locale]['start'])
         activity_logger.info('Command - /start')
     # Help command sends help text
-    elif this_command == '/help':
+    elif this_command == '/help':        
         await bot.send_message(chat_id=message.chat.id, text=message_templates[user_locale]['help'])
         activity_logger.info('Command - /help')
     # Staats command counts statistics and sends it
     elif this_command == '/stats':
-        sets_num = count_unique(value='setname')
-        emoji_num = count_unique(value='emoji')
+        sets_num = stickers_db.count_sets()
+        emoji_num = stickers_db.count_emoji()
         stats_text = message_templates[user_locale]['stats'].format(sets_num, emoji_num)
         await bot.send_message(chat_id=message.chat.id, text=stats_text)
         activity_logger.info('Command - /stats')
+    
+    # Update DB stats 
+    users_db.update_last_usage(user_id=message.from_user.id)
+    users_db.add_command_use(user_id=message.from_user.id)
+    daily_db.add_commands_use()
+
         
 # Handles all other messages
 @dp.message_handler()
-async def unknown_message(message: types.Message):
+async def unknown_message(message: types.Message):    
     # Send notification to user 
     await bot.send_message(chat_id=message.chat.id, text=message_templates[user_locale]['message is not sticker'])
     activity_logger.info('Message is nor sticker, neither command')
+    
+    # Update DB stats
+    users_db.update_last_usage(user_id=message.from_user.id)
+    users_db.add_other_message(user_id=message.from_user.id)
+    daily_db.add_other_messages()
 
     
 if __name__ == '__main__':
